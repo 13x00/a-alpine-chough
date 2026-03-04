@@ -4,8 +4,8 @@
   "description": "Architecture governance for Cursor projects — rules, config, and CLI",
   "main": "index.js",
   "bin": {
-    "aac": "./bin/cli.js",
-    "a-alpine-chough": "./bin/cli.js"
+    "aac": "bin/cli.js",
+    "a-alpine-chough": "bin/cli.js"
   },
   "scripts": {
     "test": "node -e \"require('./index.js'); console.log('OK')\""
