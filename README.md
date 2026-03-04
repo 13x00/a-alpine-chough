@@ -1,91 +1,154 @@
-## a-alpine-chough
+# a-alpine-chough
 
-> Keep your codebase clean, structured, and free of architectural drift — from day one.
+> Architecture governance for Cursor projects. Keep your codebase structured, clean, and free of drift — from day one.
 
 ---
 
 ## The Problem
 
-When building with AI-assisted tools like Cursor, it's easy to iterate fast. Too fast. You start with JSON files for your data layer, then migrate to Postgres. You refactor your component structure halfway through. You try a new routing pattern.
+When building with AI-assisted tools like Cursor, it's easy to iterate fast. Too fast. You refactor your component structure, try a new routing pattern, migrate your data layer. The problem? The old systems don't disappear. They linger — unused files, ghost components, redundant layers — and before long you're not sure what's actually running your app and what's left over from three iterations ago.
 
-The problem? The old systems don't disappear. They linger — unused files, redundant fallbacks, ghost data layers — and before long you're not sure what's actually running your app and what's just sitting there from three iterations ago.
+Cursor is great at building. It's not great at remembering what you decided last week.
 
-Cursor is great at building. It's not great at cleaning up after itself.
-
-**a-alpine-chough** is built to fix that.
+**a-alpine-chough** fixes that by giving Cursor a persistent understanding of your architecture — and the tools to enforce it.
 
 ---
 
 ## What It Does
 
-a-alpine-chough is an architecture governance package for Cursor projects. It combines a system prompt loaded at the start of your project, CLI commands you can run at any point to audit and clean your codebase, a single source of truth for your intended architecture, and migration helpers for safely transitioning between systems.
+a-alpine-chough is an architecture governance package for Cursor projects. It installs a set of rule files into `.cursor/rules/` that teach Cursor your intended structure, naming conventions, import boundaries, and refactor protocols — so every AI-assisted change stays aligned with your architecture, not just the last thing you typed.
+
+It also ships prompt commands you can run directly in Cursor chat to audit, clean, map, and migrate your codebase on demand.
 
 ---
 
-## Key Features
+## How It Works
 
-**🧹 Cleanup** — Scans your project for redundant code, unused imports, deprecated data layers, and structural leftovers from previous iterations.
+```bash
+npm install -g a-alpine-chough
+aac init
+```
 
-**🗺️ Architecture Audit** — Compares your actual file and dependency structure against your defined architecture and shows you where things have drifted.
+This drops a set of `.mdc` rule files into `.cursor/rules/` and scaffolds an `aac.config.yml` in your project root. From that point on, Cursor loads your architecture rules automatically and understands commands like `/audit`, `/cleanup`, `/overview`, and `/migrate`.
 
-**📊 Structure Overview** — Generates a human-readable report of your project's current architecture so you always know what you're working with.
+No separate process. No background daemon. Just rules and a config file.
 
-**🔄 Migration Helper** — When transitioning from one system to another (e.g. JSON → Postgres), tracks what's been migrated, what's still live on the old system, and when it's safe to remove the old layer.
+---
 
-**📋 System Prompt & Rules** — A battle-tested Cursor system prompt and a set of architectural rules you can extend.
+## Prompt Commands
+
+Once initialized, these commands are available directly in Cursor chat:
+
+| Command | What it does |
+|---|---|
+| `/audit` | Scans the codebase for architectural violations — wrong imports, raw colors, layout bugs, dead code — grouped by severity with file, line, and fix |
+| `/cleanup` | Finds unused components, props, imports, and state variables |
+| `/overview` | Maps your actual folder structure against your defined layers and reports coverage |
+| `/migrate` | Generates a step-by-step migration plan when moving between systems, and saves it as a Cursor-readable plan file |
+
+Commands trigger both when typed explicitly and when Cursor detects relevant context — e.g. suggesting `/audit` before a large refactor, or `/cleanup` when unused props are spotted.
+
+---
+
+## Rule Files
+
+aac installs 5 rule files into `.cursor/rules/`:
+
+| File | What it enforces |
+|---|---|
+| `architecture.mdc` | Layer model, folder structure, source-of-truth for styling decisions — always active |
+| `imports.mdc` | Import direction boundaries, `@/` vs `./` usage, forbidden cross-layer imports |
+| `styling.mdc` | No raw colors, token discipline, Figma → code mapping, inline style rules |
+| `layout.mdc` | Viewport height, overflow ownership, flex shrink chain, scroll region rules |
+| `migrations.mdc` | Refactor playbook, feature-flag protocol, verification checklist, dead code policy |
 
 ---
 
 ## Installation
 
 ```bash
-npm install a-alpine-chough
+npm install -g a-alpine-chough
 ```
+
+This registers the `aac` command globally on your machine. Then in any project:
+
+```bash
+aac init
+```
+
+That's it. You'll use `aac` for everything from here on.
+
+> **No global install?** You can also run it once with `npx a-alpine-chough init` — but installing globally gives you the short `aac` alias permanently.
+
+`aac init` will:
+- Ask for your project name and stack
+- Copy rule files into `.cursor/rules/`
+- Scaffold `aac.config.yml` as your architecture source of truth
 
 ---
 
-## Getting Started
+## CLI Commands
 
-**1. Initialize in your project**
-```bash
-npx aac init
-```
-
-**2. Define your architecture** in `alpine.config.ts`
-
-**3. Run your first audit**
-```bash
-aac audit
-```
-
----
-
-## Commands
+aac also ships a CLI for use outside Cursor — in your terminal or CI pipeline:
 
 | Command | Description |
-|--------|-------------|
-| `aac init` | Initialize config and install system prompt |
+|---|---|
+| `aac init` | Initialize config and install rule files |
 | `aac audit` | Run a full architecture audit |
 | `aac cleanup` | Scan and flag redundant or unused code |
 | `aac overview` | Generate a structure report |
 | `aac migrate` | Start a guided migration between systems |
 
+```bash
+# short alias
+aac audit
+
+# CI-friendly — exits with code 1 on errors
+aac audit --json
+```
+
+---
+
+## `aac.config.yml`
+
+The config file is the single source of truth for your intended architecture. The rule files and CLI both read from it.
+
+```yaml
+project: "my-app"
+stack: "Next.js App Router"
+
+layers:
+  - components/ui
+  - components/content
+  - components/layout
+  - hooks
+  - lib
+  - types
+
+rules:
+  no_cross_layer_imports: true
+  enforce_naming_conventions: true
+  no_raw_colors: true
+  no_magic_numbers: true
+  max_file_lines: 300
+```
+
 ---
 
 ## Why "Alpine Chough"?
 
-The alpine chough is a bird that thrives at altitude — in environments that are harsh, fast-changing, and unforgiving. It's agile, efficient, and doesn't carry dead weight. That's what your codebase should be.
+The alpine chough is a bird that thrives at altitude — in environments that are harsh, fast-changing, and unforgiving. It's agile, efficient, and doesn't carry dead weight.
+
+That's what your codebase should be.
 
 ---
 
 ## Status
 
-🚧 Early development. Contributions, ideas, and feedback very welcome.
+🚧 Early development. Feedback, ideas, and contributions very welcome.
 
 ---
 
 ## License
 
 MIT
-
----
