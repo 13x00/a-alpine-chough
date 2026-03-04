@@ -1,0 +1,123 @@
+---
+description: Styling rules — apply when writing or reviewing any CSS, Tailwind classes, or style props
+alwaysApply: false
+---
+
+# Styling Rules
+
+## Core principle
+> **Every visual value has a token. Find it. Use it. Never invent a parallel one.**
+
+---
+
+## Token hierarchy
+
+| What | Token namespace | Example |
+|---|---|---|
+| Colors (semantic) | `--cds-*` via Tailwind alias | `bg-layer-01`, `text-text-primary` |
+| Spacing | `--spacing-*` | `var(--spacing-6)` |
+| Border radius | `--radius-*` | `var(--radius-control)`, `rounded-control` |
+| Typography | `--font-size-*`, `--font-weight-*` | via Tailwind alias |
+| Motion | `--duration-*`, `--easing-*` | in animation constants |
+| Shadows/scrims | `--shadow-*`, `--cds-shadow` | define in tokens.css |
+| App-specific | `--am-*` | `--am-gradient` |
+
+---
+
+## Hard rules
+
+### No raw color values in components
+```tsx
+// ❌ wrong
+<div style={{ color: '#fff' }} />
+<div className="text-white" />
+<div style={{ background: 'rgba(0,0,0,0.4)' }} />
+
+// ✅ correct
+<div className="text-text-primary" />
+<div className="bg-overlay-backdrop" />  // token defined in tokens.css
+```
+
+### No inline styles except runtime-calculated values
+```tsx
+// ❌ wrong — use a Tailwind class instead
+<div style={{ borderRadius: 'var(--radius-base)' }} />
+
+// ✅ allowed — genuinely runtime-calculated
+<div style={{ transform: `translateX(${offset}px)` }} />
+<div style={{ opacity: motionValue }} />
+<div style={{ width: dynamicWidth }} />
+```
+
+### No magic numbers — use tokens
+```tsx
+// ❌ wrong
+const CARD_PADDING = '24px'
+const CARD_RADIUS = '14px'
+
+// ✅ correct
+const CARD_PADDING = 'var(--spacing-6)'
+const CARD_RADIUS = 'var(--radius-xl)'
+```
+
+### No arbitrary Tailwind values without justification
+```tsx
+// ❌ wrong — arbitrary values are a smell
+<div className="text-[11px] min-h-[11.25rem] min-w-[20rem]" />
+
+// ✅ if unavoidable — extend Tailwind config instead
+// tailwind.config.ts: { minHeight: { panel: 'var(--spacing-panel)' } }
+<div className="min-h-panel" />
+
+// ✅ acceptable only in dev tooling / Storybook utils
+```
+
+### No CSS-in-JS, no CSS modules, no component-level CSS files
+```tsx
+// ❌ wrong
+import styles from './Button.module.css'
+
+// ✅ correct — Tailwind utilities + global tokens only
+```
+
+---
+
+## Figma → code token mapping
+
+**Map intent, not names.** Figma token names rarely match Carbon/code names exactly.
+
+Process:
+1. Identify the *intent* of the Figma token (e.g. "surface background", "subtle border")
+2. Find the nearest semantic Carbon/Tailwind alias that matches that intent
+3. Use that alias — do not create a new token just because the name differs
+4. If no alias exists, add it to `tokens.css` with a comment explaining the Figma mapping
+
+```css
+/* tokens.css */
+/* Figma: "Overlay/Scrim" → maps to Carbon scrim pattern */
+--overlay-backdrop: rgba(0, 0, 0, 0.4); /* TODO: replace with --cds-overlay when available */
+```
+
+**Never** add a token just to match Figma naming — add it only when the intent has no existing match.
+
+---
+
+## Global CSS rules
+
+`app/globals.css` is for truly global behaviors only:
+- `focus-visible` styles
+- Shared keyframes
+- CSS reset rules
+- `--am-*` app-specific tokens
+
+Do not add:
+- Component-specific overrides
+- One-off utility classes that belong in Tailwind config
+- Layout rules that belong in a layout component
+
+---
+
+## Storybook exception
+
+Raw colors and arbitrary values in `stories/` are warnings, not errors.
+Storybook utils are dev tooling — apply best effort but don't block on them.

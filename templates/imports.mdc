@@ -1,0 +1,80 @@
+---
+description: Import boundary rules — apply when writing or reviewing any import statement
+alwaysApply: false
+---
+
+# Import Rules
+
+## Allowed import directions
+
+```
+app/*         → anything
+layout/*      → content/*, ui/*, hooks/*, types/*, lib/*
+content/*     → ui/*, types/*, lib/*, next/*, @carbon/icons-react
+ui/*          → lib/* only
+hooks/*       → types/*, React only
+lib/*         → no internal imports
+types/*       → no internal imports
+scripts/*     → no runtime imports (filesystem + node only)
+```
+
+## The one rule to remember
+> **Imports flow inward toward primitives. Primitives never import outward.**
+
+---
+
+## Import style
+
+### Cross-layer imports — always use `@/` alias
+```ts
+// ✅ correct
+import { Surface } from '@/components/ui/Surface'
+import { DetailItem } from '@/types/content'
+import { cn } from '@/lib/utils'
+
+// ❌ wrong
+import { Surface } from '../../../components/ui/Surface'
+```
+
+### Same-folder imports — `./` is allowed
+```ts
+// ✅ correct — siblings in components/layout/
+import { LeftPanel } from './LeftPanel'
+import { RightPanel } from './RightPanel'
+
+// also fine
+import { LeftPanel } from '@/components/layout/LeftPanel'
+```
+
+---
+
+## Forbidden imports (always flag these)
+
+| From | Importing | Why forbidden |
+|---|---|---|
+| `components/ui/*` | `components/layout/*` | Primitives must not know about composition |
+| `components/ui/*` | `components/content/*` | Primitives must not know about domain |
+| `components/content/*` | `components/layout/*` | Avoid circular coupling |
+| `hooks/*` | `components/*` | Hooks are view-model — no visual dependencies |
+| `scripts/*` | `app/*` or `components/*` | Scripts are build-time only |
+| Any runtime file | `scripts/*` | Scripts must never enter the bundle |
+
+---
+
+## Third-party library boundaries
+
+- `framer-motion` — contained to overlay/animation modules only. Do not spread across app.
+- `@carbon/icons-react` — imported at point of use in content/ui components.
+- `next/*` — only in `app/` and `components/content/*` (e.g. `next/image`, `next/link`).
+- `sharp` — scripts only, never in runtime components.
+
+---
+
+## When reviewing imports
+
+Before accepting any new import, check:
+1. Does it flow in the allowed direction?
+2. Is it using `@/` for cross-layer, `./` for same-folder?
+3. Is a third-party lib being introduced in the right layer?
+
+If any answer is no — flag it and suggest the correct import or restructure.

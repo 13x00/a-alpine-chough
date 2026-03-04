@@ -1,0 +1,131 @@
+---
+description: Refactor and migration protocol — apply when making structural changes, refactoring components, or migrating between systems
+alwaysApply: false
+---
+
+# Migration & Refactor Rules
+
+## Core principle
+> **Audit first. Smallest diff possible. Verify before continuing. Never leave the codebase worse than you found it.**
+
+---
+
+## The refactor playbook (always follow this order)
+
+### 1. Audit before touching anything
+- Map the current structure: what exists, what it does, what's broken
+- Identify the root cause — not the symptom
+- List every file that will be affected
+- Do not start editing until you have a diagnosis
+
+### 2. Fix the source of truth, not the instance
+```
+❌ wrong — patching every instance
+  Button.tsx → add rounded-lg
+  Card.tsx → add rounded-lg
+  Panel.tsx → add rounded-lg
+
+✅ correct — fix the source
+  Surface.tsx → update radius token
+  → everything that uses Surface inherits the fix
+```
+
+### 3. Make the smallest possible diff
+- Touch only the files needed for this change
+- No "drive-by" refactors while you're in a file
+- One axis at a time (e.g. font-size only, not font-size + spacing + color)
+
+### 4. Feature-flag migrations
+```tsx
+// ✅ correct — keep legacy intact until replacement is stable
+const USE_MOTION_OVERLAY = true
+
+{USE_MOTION_OVERLAY ? <DetailOverlayMotion /> : <DetailOverlay />}
+```
+- Keep old system working behind a flag
+- Validate new system thoroughly before deleting legacy
+- Delete the flag + legacy code once stable — do not leave flags permanently
+
+### 5. Verification checklist (run after every change)
+- [ ] `npx tsc --noEmit` — no type errors
+- [ ] `npm run build` — builds clean
+- [ ] No document scroll (resize window + dock/undock DevTools)
+- [ ] Overlay open/close works correctly
+- [ ] Internal scroll regions work (list scrolls, page doesn't)
+- [ ] Reduced motion mode respected
+- [ ] Storybook renders correctly
+- [ ] Search for removed symbols — 0 matches confirmed
+
+### 6. Clean up completely
+When deleting a component or prop:
+- Delete the file
+- Remove all imports (search codebase — confirm 0 matches)
+- Remove from types if applicable
+- Update `.cursor/plans/` docs to match reality
+- Run build to confirm
+
+---
+
+## Extract before delete
+
+```
+✅ correct order:
+  1. Extract new unit (DetailOverlayMotion component + useDetailAnimation hook)
+  2. Switch call sites to new unit
+  3. Verify behavior is identical
+  4. Delete old unit
+
+❌ wrong order:
+  1. Delete old unit
+  2. Try to rebuild behavior from scratch
+```
+
+---
+
+## Naming during migration
+
+Rename props and handlers to match the new mental model — do not keep old names for compatibility:
+```tsx
+// ❌ wrong — name no longer matches behavior
+onHomeClick={() => closeDetail()}
+
+// ✅ correct — rename to match intent
+onCloseDetail={() => closeDetail()}
+```
+
+---
+
+## Dead code policy
+
+- No zombie components ("keeping it just in case")
+- No unused props on component interfaces
+- No unused state variables
+- No unused imports
+- Flag immediately — remove in the same PR if safe, or open a tracked issue
+
+---
+
+## Pipeline migration rules
+
+Scripts must always support:
+- `--dry-run` mode (show what would change, don't change it)
+- Caching (skip unchanged inputs)
+- CI check mode (fail if outputs are stale)
+- Clean/prune mode (remove orphaned outputs)
+
+Originals live outside the deploy output:
+```
+assets/originals/   ← gitignored, source of truth
+public/photos/      ← generated, committed, deployable
+```
+
+---
+
+## Standardize after discovery
+
+If you find one violation of a rule, assume it's systemic:
+```
+Found: one component with hardcoded radius value
+Action: search the whole codebase, fix all instances, fix the source of truth
+Not: fix just the one you found
+```
