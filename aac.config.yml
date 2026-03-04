@@ -1,0 +1,19 @@
+# a-alpine-chough — single source of truth for architecture
+# Edit layers and rules here. Rule files in .cursor/rules/ reference this file.
+
+project: a-alpine-chough
+stack: npm package
+layers:
+  - components/ui
+  - components/content
+  - components/layout
+  - components/transition
+  - hooks
+  - lib
+  - types
+rules:
+  no_cross_layer_imports: true
+  enforce_naming_conventions: true
+  no_raw_colors: true
+  no_magic_numbers: true
+  max_file_lines: 300
